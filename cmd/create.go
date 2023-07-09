@@ -1,40 +1,139 @@
 /*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2023 Rudolfo Borges <oliveira.rudolfo@gmail.com>
 */
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/rudolfoborges/create-go-api/internal/create"
 	"github.com/spf13/cobra"
 )
+
+type answers struct {
+	Name          string
+	Handler       string
+	Database      string
+	Configuration string
+	Logger        string
+	DI            string
+	WithDocker    bool
+	Agree         bool
+}
+
+func (a *answers) Input() *create.Input {
+	return create.NewInput(a.Name)
+}
+
+var questions = []*survey.Question{
+	{
+		Name: "name",
+		Prompt: &survey.Input{
+			Message: "Name of the new go api project",
+		},
+		Validate: survey.Required,
+	},
+	{
+		Name: "handler",
+		Prompt: &survey.Select{
+			Message: "Choose a http handler",
+			Options: []string{
+				"net/http",
+				"chi",
+				"fiber",
+			},
+			Default:  "fiber",
+			PageSize: 3,
+		},
+		Validate: survey.Required,
+	},
+	{
+		Name: "di",
+		Prompt: &survey.Select{
+			Message: "Choose a dependency injection strategy",
+			Options: []string{
+				"fx",
+				"wire",
+				"none",
+			},
+			Default:  "none",
+			PageSize: 3,
+		},
+		Validate: survey.Required,
+	},
+	{
+		Name: "database",
+		Prompt: &survey.Select{
+			Message: "Choose a database",
+			Options: []string{
+				"mysql",
+				"postgres",
+				"sqlite",
+			},
+			Default:  "mysql",
+			PageSize: 3,
+		},
+		Validate: survey.Required,
+	},
+	{
+		Name: "configuration",
+		Prompt: &survey.Select{
+			Message: "choose a configuration strategy",
+			Options: []string{
+				"viper",
+				"godotenv",
+			},
+			Default:  "viper",
+			PageSize: 2,
+		},
+		Validate: survey.Required,
+	},
+	{
+		Name: "logger",
+		Prompt: &survey.Select{
+			Message: "choose a logger strategy",
+			Options: []string{
+				"zap",
+				"zerolog",
+			},
+			Default:  "zap",
+			PageSize: 2,
+		},
+		Validate: survey.Required,
+	},
+	{
+		Name: "withDocker",
+		Prompt: &survey.Confirm{
+			Message: "create Dockerfile?",
+			Default: true,
+		},
+	},
+	{
+		Name: "agree",
+		Prompt: &survey.Confirm{
+			Message: "If everything is okay, can I create this project for you?",
+			Default: true,
+		},
+	},
+}
 
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("create called")
-	},
+	Short: "Create a new golang api project",
+	Long:  `Create a new golang api project`,
+	RunE:  runCommand,
 }
 
 func init() {
 	rootCmd.AddCommand(createCmd)
+}
 
-	// Here you will define your flags and configuration settings.
+func runCommand(cmd *cobra.Command, args []string) error {
+	var a answers
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// createCmd.PersistentFlags().String("foo", "", "A help for foo")
+	if err := survey.Ask(questions, &a); err != nil {
+		panic(err)
+	}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	return create.Execute(a.Input())
 }
