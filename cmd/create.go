@@ -6,6 +6,7 @@ package cmd
 import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/rudolfoborges/create-go-api/internal/create"
+	"github.com/rudolfoborges/create-go-api/internal/create/strategy"
 	"github.com/spf13/cobra"
 )
 
@@ -20,15 +21,15 @@ type answers struct {
 	Agree         bool
 }
 
-func (a *answers) Input() *create.Input {
-	return create.NewInput(a.Name)
+func (a *answers) input() *create.Input {
+	return create.NewInput(a.Name, a.Handler, a.Logger)
 }
 
 var questions = []*survey.Question{
 	{
 		Name: "name",
 		Prompt: &survey.Input{
-			Message: "Name of the new go api project",
+			Message: "Name of the project",
 		},
 		Validate: survey.Required,
 	},
@@ -37,11 +38,11 @@ var questions = []*survey.Question{
 		Prompt: &survey.Select{
 			Message: "Choose a http handler",
 			Options: []string{
-				"net/http",
-				"chi",
-				"fiber",
+				strategy.FIBER,
+				strategy.NET_HTTP,
+				strategy.CHI,
 			},
-			Default:  "fiber",
+			Default:  strategy.FIBER,
 			PageSize: 3,
 		},
 		Validate: survey.Required,
@@ -92,10 +93,10 @@ var questions = []*survey.Question{
 		Prompt: &survey.Select{
 			Message: "choose a logger strategy",
 			Options: []string{
-				"zap",
-				"zerolog",
+				strategy.ZAP,
+				strategy.ZEROLOG,
 			},
-			Default:  "zap",
+			Default:  strategy.ZAP,
 			PageSize: 2,
 		},
 		Validate: survey.Required,
@@ -135,5 +136,5 @@ func runCommand(cmd *cobra.Command, args []string) error {
 		panic(err)
 	}
 
-	return create.Execute(a.Input())
+	return create.Execute(a.input())
 }
